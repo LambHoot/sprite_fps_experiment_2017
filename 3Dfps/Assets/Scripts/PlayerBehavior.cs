@@ -3,7 +3,11 @@ using System.Collections;
 
 public class PlayerBehavior : MonoBehaviour {
 
-    public float playerSpeed;
+    private Rigidbody playerRigidbody;
+    private Collider playerCollider;
+    public GameObject PlayerCamera;
+    public float playerSpeed = 0.1f;
+    public float jumpSpeed;
     float vHorizontal, vVertical;//for movement
 
     //For mouselook
@@ -26,6 +30,10 @@ public class PlayerBehavior : MonoBehaviour {
     // Use this for initialization
     void Start () {
         playerSpeed = 0.1f;
+        jumpSpeed = 200f;
+
+        playerRigidbody = GetComponent<Rigidbody>();
+        playerCollider = GetComponent<Collider>();
 
         //for mouselook
         if (lockCursor)
@@ -49,8 +57,17 @@ public class PlayerBehavior : MonoBehaviour {
             Vector3 direction = new Vector3(vHorizontal, 0.0f, vVertical);
             direction = Vector3.ClampMagnitude(direction * playerSpeed, 1.0f);
             transform.Translate(direction, Space.Self);
-            transform.position = new Vector3(transform.position.x, 1f, transform.position.z);
+            transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
         }
+
+        //jump
+        float playerColliderHeight = playerCollider.bounds.extents.y;
+        bool playerGrounded = Physics.Raycast(transform.position, -Vector3.up, playerColliderHeight + 0.1f);
+        if (Input.GetKey(KeyCode.Space) && playerGrounded)
+        {
+            playerRigidbody.AddForce(Vector3.up * jumpSpeed);
+        }
+
     }
 
     void mouseLook()
@@ -95,13 +112,15 @@ public class PlayerBehavior : MonoBehaviour {
         yaggregate = yaggregate / smoothing * sensitivity;
 
         // turn the x start orientation to non-zero for clamp
-        Vector3 newOrientation = transform.eulerAngles + new Vector3(-yaggregate, xaggregate, 0);
+        Vector3 newOrientation = PlayerCamera.transform.eulerAngles + new Vector3(-yaggregate, 0, 0);
+        Vector3 newBodyOrientation = transform.eulerAngles + new Vector3(0, xaggregate, 0);
 
 
         float xclamp = Mathf.Clamp(newOrientation.x, Xlimit, 360 - Xlimit) % 360;
 
         // rotate the object based on axis input (note the negative y axis)
-        transform.eulerAngles = newOrientation;
+        PlayerCamera.transform.eulerAngles = newOrientation;
+        transform.eulerAngles = newBodyOrientation;
     }
 
 }
